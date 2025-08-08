@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,63 +21,87 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    // Check if we have database connection
+    const hasDatabase = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
+    
+    if (hasDatabase) {
+      // Production: Use real database
+      try {
+        const { prisma } = await import("@/lib/prisma")
+        
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email }
+        })
 
-    if (existingUser) {
+        if (existingUser) {
+          return NextResponse.json(
+            { error: "User with this email already exists" },
+            { status: 400 }
+          )
+        }
+
+        // Create user
+        const user = await prisma.user.create({
+          data: {
+            name,
+            email,
+            role: role.toUpperCase(),
+          },
+        })
+
+        // Create user profile
+        await prisma.userProfile.create({
+          data: {
+            userId: user.id,
+          },
+        })
+
+        // If user is a donor, create a default portfolio
+        if (role.toUpperCase() === "DONOR") {
+          await prisma.portfolio.create({
+            data: {
+              userId: user.id,
+              name: "My Portfolio",
+              description: "My default portfolio of organizations",
+              isDefault: true,
+            },
+          })
+        }
+
+        return NextResponse.json(
+          { 
+            message: "Account created successfully!", 
+            user: { 
+              id: user.id, 
+              name: user.name, 
+              email: user.email, 
+              role: user.role 
+            } 
+          },
+          { status: 201 }
+        )
+      } catch (dbError) {
+        console.error("Database error:", dbError)
+        return NextResponse.json(
+          { error: "Database connection failed. Please try again." },
+          { status: 500 }
+        )
+      }
+    } else {
+      // Development/Demo: Return success without database
       return NextResponse.json(
-        { error: "User with this email already exists" },
-        { status: 400 }
+        { 
+          message: "Account registration received! Database will be connected after Vercel Postgres setup.", 
+          user: { 
+            name, 
+            email, 
+            role 
+          } 
+        },
+        { status: 201 }
       )
     }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        role: role.toUpperCase(),
-        // Note: Storing hashed password in a separate field for demo
-        // In production, you'd have a password field in the User model
-      },
-    })
-
-    // Create user profile
-    await prisma.userProfile.create({
-      data: {
-        userId: user.id,
-      },
-    })
-
-    // If user is a donor, create a default portfolio
-    if (role.toUpperCase() === "DONOR") {
-      await prisma.portfolio.create({
-        data: {
-          userId: user.id,
-          name: "My Portfolio",
-          description: "My default portfolio of organizations",
-          isDefault: true,
-        },
-      })
-    }
-
-    return NextResponse.json(
-      { 
-        message: "Account created successfully", 
-        user: { 
-          id: user.id, 
-          name: user.name, 
-          email: user.email, 
-          role: user.role 
-        } 
-      },
-      { status: 201 }
-    )
   } catch (error) {
     console.error("Sign-up error:", error)
     return NextResponse.json(

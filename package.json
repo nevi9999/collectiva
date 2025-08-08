@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "deploy": "npm run build && echo '✅ Build successful! Ready for Vercel deployment.'",
-    "status": "./deploy-helper.sh"
+    "status": "./deploy-helper.sh",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -22,6 +26,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
     "@stripe/stripe-js": "^7.8.0",
+    "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
