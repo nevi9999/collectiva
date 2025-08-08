@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,14 @@ export async function POST(req: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
+        { status: 400 }
+      )
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters long" },
         { status: 400 }
       )
     }
@@ -41,11 +50,15 @@ export async function POST(req: NextRequest) {
           )
         }
 
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 12)
+
         // Create user
         const user = await prisma.user.create({
           data: {
             name,
             email,
+            password: hashedPassword,
             role: role.toUpperCase(),
           },
         })

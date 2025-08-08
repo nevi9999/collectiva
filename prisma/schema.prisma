@@ -1,6 +1,3 @@
-// Collectiva Database Schema
-// Solidarity fundraising platform with AI-powered fund distribution
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,22 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js required models
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -39,23 +34,22 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String         @unique
   emailVerified DateTime?
   image         String?
-  role          UserRole  @default(DONOR)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
+  password      String?        // For email/password authentication
+  role          UserRole       @default(DONOR)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   accounts      Account[]
   sessions      Session[]
   profile       UserProfile?
+  challenges    Challenge[]
+  donations     Donation[]
   portfolios    Portfolio[]
   subscriptions Subscription[]
-  donations     Donation[]
-  challenges    Challenge[]
 
   @@map("users")
 }
@@ -68,7 +62,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// User profile for additional information
 model UserProfile {
   id                String   @id @default(cuid())
   userId            String   @unique
@@ -76,15 +69,13 @@ model UserProfile {
   location          String?
   website           String?
   monthlyBudget     Float?   @default(0)
-  preferredCauses   String[] // Array of cause categories
-  notificationPrefs Json?    // Notification preferences
+  preferredCauses   String[]
+  notificationPrefs Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Organizations (NGOs, charities, etc.)
 model Organization {
   id              String             @id @default(cuid())
   name            String
@@ -94,148 +85,127 @@ model Organization {
   logo            String?
   banner          String?
   location        String
-  causes          String[]           // Array of cause categories
-  efficiencyScore Float              @default(0) // AI-calculated efficiency score
+  causes          String[]
+  efficiencyScore Float              @default(0)
   verified        Boolean            @default(false)
-  verificationDoc String?            // Document for verification
+  verificationDoc String?
   status          OrganizationStatus @default(PENDING)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
-
-  // Relations
-  portfolioItems PortfolioItem[]
-  challenges     Challenge[]
-  donations      Donation[]
-  thankYous      ThankYou[]
+  challenges      Challenge[]
+  donations       Donation[]
+  portfolioItems  PortfolioItem[]
+  thankYous       ThankYou[]
 
   @@map("organizations")
 }
 
-// User portfolios (collection of organizations)
 model Portfolio {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   userId      String
   name        String
   description String?
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items PortfolioItem[]
+  isDefault   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  items       PortfolioItem[]
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("portfolios")
 }
 
-// Organizations within a portfolio with allocation percentages
 model PortfolioItem {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   portfolioId    String
   organizationId String
-  allocation     Float    @default(0) // Percentage allocation (0-100)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  portfolio    Portfolio    @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  allocation     Float        @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  portfolio      Portfolio    @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
   @@unique([portfolioId, organizationId])
   @@map("portfolio_items")
 }
 
-// Monthly subscriptions
 model Subscription {
-  id            String           @id @default(cuid())
-  userId        String
-  portfolioId   String?
-  amount        Float
-  currency      String           @default("USD")
-  status        SubscriptionStatus @default(ACTIVE)
-  stripeId      String?          @unique // Stripe subscription ID
-  startDate     DateTime         @default(now())
-  endDate       DateTime?
-  lastPayment   DateTime?
-  nextPayment   DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  donations Donation[]
+  id          String             @id @default(cuid())
+  userId      String
+  portfolioId String?
+  amount      Float
+  currency    String             @default("USD")
+  status      SubscriptionStatus @default(ACTIVE)
+  stripeId    String?            @unique
+  startDate   DateTime           @default(now())
+  endDate     DateTime?
+  lastPayment DateTime?
+  nextPayment DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  donations   Donation[]
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
 }
 
-// Individual donations/transactions
 model Donation {
-  id             String     @id @default(cuid())
+  id             String         @id @default(cuid())
   userId         String
   organizationId String
   subscriptionId String?
   amount         Float
-  currency       String     @default("USD")
+  currency       String         @default("USD")
   status         DonationStatus @default(PENDING)
-  stripeId       String?    @unique // Stripe payment intent ID
-  processingFee  Float?     // Platform fee
-  netAmount      Float?     // Amount after fees
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-
-  // Relations
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
-  thankYou     ThankYou?
+  stripeId       String?        @unique
+  processingFee  Float?
+  netAmount      Float?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thankYou       ThankYou?
 
   @@map("donations")
 }
 
-// Fundraising challenges created by organizations
 model Challenge {
-  id             String        @id @default(cuid())
+  id             String          @id @default(cuid())
   organizationId String
-  userId         String?       // Creator (if created by admin)
+  userId         String?
   title          String
   description    String
   targetAmount   Float
-  currentAmount  Float         @default(0)
-  currency       String        @default("USD")
-  startDate      DateTime      @default(now())
+  currentAmount  Float           @default(0)
+  currency       String          @default("USD")
+  startDate      DateTime        @default(now())
   endDate        DateTime
   status         ChallengeStatus @default(ACTIVE)
   image          String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User?        @relation(fields: [userId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?           @relation(fields: [userId], references: [id])
 
   @@map("challenges")
 }
 
-// Thank you messages/photos from organizations
 model ThankYou {
-  id         String   @id @default(cuid())
-  donationId String   @unique
-  title      String
-  message    String
-  image      String?
-  video      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  donation     Donation     @relation(fields: [donationId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  donationId     String       @unique
+  title          String
+  message        String
+  image          String?
+  video          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   organizationId String
+  donation       Donation     @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("thank_yous")
 }
 
-// Enums
 enum UserRole {
   DONOR
   ORGANIZATION
