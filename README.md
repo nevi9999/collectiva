@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Collectiva - Solidarity Fundraising Platform
 
-## Getting Started
+![Collectiva Logo](https://via.placeholder.com/200x60/2563eb/ffffff?text=Collectiva)
 
-First, run the development server:
+## 🌟 Project Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Collectiva is a revolutionary solidarity fundraising platform that enables individuals to create personalized portfolios of charitable organizations and support them through monthly subscriptions. Our AI-powered system ensures donations reach the most efficient organizations while providing complete transparency and impact tracking.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Key Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### For Donors
+- **Custom Portfolios** - Create personalized collections of organizations aligned with your values
+- **AI-Powered Distribution** - Smart fund allocation based on efficiency metrics and impact scores
+- **Monthly Subscriptions** - Automated recurring donations with flexible budgeting
+- **Impact Tracking** - Real-time updates on how your donations are making a difference
+- **Thank You Management** - Receive personalized thank you letters and impact photos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### For Organizations
+- **Organization Profiles** - Comprehensive listings with verification badges
+- **Challenge Creation** - Time-sensitive fundraising campaigns with progress tracking
+- **Impact Reporting** - Tools to share success stories and financial transparency
+- **Donor Communication** - Direct channels to thank supporters and share updates
 
-## Learn More
+### Platform Features
+- **Verification System** - Rigorous vetting process for organization credibility
+- **Analytics Dashboard** - Comprehensive insights for both donors and organizations
+- **Mobile Responsive** - Seamless experience across all devices
+- **Secure Payments** - Stripe integration for safe, encrypted transactions
 
-To learn more about Next.js, take a look at the following resources:
+## 🏗️ Technical Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Frontend
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript for type safety
+- **Styling**: Tailwind CSS with custom component library
+- **UI Components**: Radix UI primitives for accessibility
+- **Icons**: Lucide React for consistent iconography
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Backend
+- **API Routes**: Next.js API routes for serverless functions
+- **Database**: Ready for PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js for secure user management
+- **Payments**: Stripe for subscription and one-time payments
+- **AI Integration**: OpenAI API for fund distribution optimization
 
-## Deploy on Vercel
+## 🚀 Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Prerequisites
+- Node.js 18.17.0 or higher
+- npm or yarn package manager
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Installation
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+3. **Open in browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📱 Current Pages
+
+### 🏠 Landing Page (`/`)
+- Hero section with value proposition
+- Feature highlights and how-it-works
+- Call-to-action for registration
+
+### 🏢 Organizations (`/organizations`)
+- Directory of verified organizations
+- Filtering and search capabilities
+- Add to portfolio functionality
+
+### 🎯 Challenges (`/challenges`)
+- Active fundraising challenges
+- Progress tracking and urgency indicators
+
+### 📊 Dashboard (`/dashboard`)
+- Personal impact overview
+- Portfolio management
+- AI recommendations
+
+### 🔐 Authentication
+- Sign up (`/sign-up`) and Sign in (`/sign-in`)
+
+## 🤖 AI-Powered Features
+
+- Smart fund distribution based on efficiency
+- Portfolio optimization recommendations
+- Impact scoring and analytics
+
+**Made with ❤️ for a better world through collective action**
