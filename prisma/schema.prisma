@@ -1,0 +1,272 @@
+// Collectiva Database Schema
+// Solidarity fundraising platform with AI-powered fund distribution
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(DONOR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  profile       UserProfile?
+  portfolios    Portfolio[]
+  subscriptions Subscription[]
+  donations     Donation[]
+  challenges    Challenge[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// User profile for additional information
+model UserProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?
+  location          String?
+  website           String?
+  monthlyBudget     Float?   @default(0)
+  preferredCauses   String[] // Array of cause categories
+  notificationPrefs Json?    // Notification preferences
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Organizations (NGOs, charities, etc.)
+model Organization {
+  id              String             @id @default(cuid())
+  name            String
+  email           String             @unique
+  description     String
+  website         String?
+  logo            String?
+  banner          String?
+  location        String
+  causes          String[]           // Array of cause categories
+  efficiencyScore Float              @default(0) // AI-calculated efficiency score
+  verified        Boolean            @default(false)
+  verificationDoc String?            // Document for verification
+  status          OrganizationStatus @default(PENDING)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  portfolioItems PortfolioItem[]
+  challenges     Challenge[]
+  donations      Donation[]
+  thankYous      ThankYou[]
+
+  @@map("organizations")
+}
+
+// User portfolios (collection of organizations)
+model Portfolio {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PortfolioItem[]
+
+  @@map("portfolios")
+}
+
+// Organizations within a portfolio with allocation percentages
+model PortfolioItem {
+  id             String   @id @default(cuid())
+  portfolioId    String
+  organizationId String
+  allocation     Float    @default(0) // Percentage allocation (0-100)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  portfolio    Portfolio    @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, organizationId])
+  @@map("portfolio_items")
+}
+
+// Monthly subscriptions
+model Subscription {
+  id            String           @id @default(cuid())
+  userId        String
+  portfolioId   String?
+  amount        Float
+  currency      String           @default("USD")
+  status        SubscriptionStatus @default(ACTIVE)
+  stripeId      String?          @unique // Stripe subscription ID
+  startDate     DateTime         @default(now())
+  endDate       DateTime?
+  lastPayment   DateTime?
+  nextPayment   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  donations Donation[]
+
+  @@map("subscriptions")
+}
+
+// Individual donations/transactions
+model Donation {
+  id             String     @id @default(cuid())
+  userId         String
+  organizationId String
+  subscriptionId String?
+  amount         Float
+  currency       String     @default("USD")
+  status         DonationStatus @default(PENDING)
+  stripeId       String?    @unique // Stripe payment intent ID
+  processingFee  Float?     // Platform fee
+  netAmount      Float?     // Amount after fees
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  thankYou     ThankYou?
+
+  @@map("donations")
+}
+
+// Fundraising challenges created by organizations
+model Challenge {
+  id             String        @id @default(cuid())
+  organizationId String
+  userId         String?       // Creator (if created by admin)
+  title          String
+  description    String
+  targetAmount   Float
+  currentAmount  Float         @default(0)
+  currency       String        @default("USD")
+  startDate      DateTime      @default(now())
+  endDate        DateTime
+  status         ChallengeStatus @default(ACTIVE)
+  image          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@map("challenges")
+}
+
+// Thank you messages/photos from organizations
+model ThankYou {
+  id         String   @id @default(cuid())
+  donationId String   @unique
+  title      String
+  message    String
+  image      String?
+  video      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  donation     Donation     @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@map("thank_yous")
+}
+
+// Enums
+enum UserRole {
+  DONOR
+  ORGANIZATION
+  ADMIN
+}
+
+enum OrganizationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum ChallengeStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
