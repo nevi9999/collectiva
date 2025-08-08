@@ -7,7 +7,7 @@ import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Remove adapter for JWT strategy
   providers: [
     // Only include OAuth providers if credentials are available
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
@@ -64,24 +64,27 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   session: {
-    strategy: "database",
+    strategy: "jwt", // Must use JWT for credentials provider
   },
   pages: {
     signIn: "/sign-in",
   },
   callbacks: {
-    async session({ session, user }) {
-      if (session?.user && user) {
-        (session.user as any).id = user.id
-        ;(session.user as any).role = (user as any).role
-      }
-      return session
-    },
-    async jwt({ user, token }) {
+    async jwt({ token, user }) {
+      // Persist the OAuth account-related information or user role to the token right after signin
       if (user) {
         token.role = (user as any).role
+        token.id = user.id
       }
       return token
+    },
+    async session({ session, token }) {
+      // Send properties to the client
+      if (token) {
+        (session.user as any).id = token.id
+        ;(session.user as any).role = token.role
+      }
+      return session
     }
   }
 }
